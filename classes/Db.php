@@ -121,7 +121,10 @@ public function all()
 }
 
 
-
+ public function insert( $data )
+{
+  # code...
+}
 
 
 }
