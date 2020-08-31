@@ -40,6 +40,7 @@ public $quantity;
 /**
  * select('category'); select * from category
  * select(['category' => ['id','name']]); select id,name from category
+ * @return string
  */
 
 public function select( $table )
