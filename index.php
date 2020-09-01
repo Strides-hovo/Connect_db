@@ -20,4 +20,4 @@ $oop_conn = new classes\Db();
 $ins = $oop_conn->insert('test','name,status',[$name,1]);
 
 
-// debug( $ins ,true);
+debug( $ins );

@@ -130,7 +130,6 @@ public function all()
  * @return count insert_row
  */
 
-
  public function insert( $table, $colums, $data )
 {
     $ins = '';
@@ -156,9 +155,7 @@ public function all()
       $sql = "INSERT INTO `{$table}` ($colum) VALUES $ins";
          
     if( !empty( $items ) ){
-      debug( $items );
       $query = $this->conn->prepare( $sql );
-
       for($i = 0; $i < count( $items[0] ); ++$i){
           for( $s = 0; $s < count( $items ); ++$s ){
               $request[$i][$s] = $items[$s][$i];
