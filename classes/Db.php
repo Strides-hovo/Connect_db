@@ -126,9 +126,9 @@ public function all()
  * $colums string|array
  * $data array
  * @example insert('category',['name',status'],[$name,$status]);
+ * @example insert('category','name,status',[$name,1]);
  * @return count insert_row
  */
-
 
 
  public function insert( $table, $colums, $data )
@@ -150,7 +150,7 @@ public function all()
       else 
             $items[] = array_fill( 0, count( $data[0] ), $value );  
       }
-      
+
       $ins = rtrim($ins,',');
       $ins = "( {$ins} )";
       $sql = "INSERT INTO `{$table}` ($colum) VALUES $ins";
