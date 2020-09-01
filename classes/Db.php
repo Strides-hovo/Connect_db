@@ -21,7 +21,7 @@ public $conn;
 public $where;
 public $select;
 public $quantity;
-
+public $insert;
 
 
  public function __construct()
@@ -121,10 +121,57 @@ public function all()
    return $res->$req();
 }
 
+/**
+ * $table string
+ * $colums string|array
+ * $data array
+ * @example insert('category',['name',status'],[$name,$status]);
+ * @return count insert_row
+ */
 
- public function insert( $data )
+
+
+ public function insert( $table, $colums, $data )
 {
-  # code...
+    $ins = '';
+    $items = [];
+    $request = []; 
+
+    if( is_string($colums) ){
+      $colum = $colums;
+    }elseif (is_array($colums)){
+      $colum = implode(', ',$colums);
+    }else return false;
+
+    foreach ( $data as $key => $value ) {
+      $ins .= "?,";
+      if(is_array($value)) 
+            $items[] = $value;
+      else 
+            $items[] = array_fill( 0, count( $data[0] ), $value );  
+      }
+      
+      $ins = rtrim($ins,',');
+      $ins = "( {$ins} )";
+      $sql = "INSERT INTO `{$table}` ($colum) VALUES $ins";
+         
+    if( !empty( $items ) ){
+      debug( $items );
+      $query = $this->conn->prepare( $sql );
+
+      for($i = 0; $i < count( $items[0] ); ++$i){
+          for( $s = 0; $s < count( $items ); ++$s ){
+              $request[$i][$s] = $items[$s][$i];
+          }
+      }
+      $res = 0;
+      foreach ( $request as $key => $execute ) {
+        if($query->execute( $execute ) ){
+          $res += $query->rowCount();
+        }else return false;   
+      }
+    }
+  return $res;
 }
 
 
