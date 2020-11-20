@@ -70,9 +70,9 @@ public function where(  $where )
     $i = 0;
       foreach ($where as $k => $v) {  
         if( $i < 1 )
-          $str .= ' WHERE ' . $k . ' = ' . $v;
+          $str .= ' WHERE ' . $k . ' = ' . "'$v'";
         else
-          $str .= ' AND ' . $k . ' = ' . $v;
+          $str .= ' AND ' . $k . ' = ' . "'$v'";
       $i++;
       }
   }else{
