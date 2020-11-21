@@ -171,5 +171,40 @@ public function all()
   return $res;
 }
 
+  
+  /**
+ * $table string
+ * $colums string|array
+ * $data array
+ * $where array
+ * @example update('category',['name',status'],[$name,$status]);
+ * @example update('category','name,status', $name, 1 );
+ * @return count update_row
+ */
+public function update( $table, $colums, $data, $where )
+{
+
+    $sql = "UPDATE $table SET";
+    $val = '';
+    $type = 'array';
+
+      if ( is_string( $colums )) 
+          $sql .= "{$colums} = {$data}";
+
+      else if( is_array( $colums )){
+        $count = count( $colums );
+        for ( $i = 0; $i < $count; $i++ ) {
+          $sql .= " {$colums[$i]} = '{$data[$i]}',";
+        }
+      }
+
+    $sql = rtrim($sql,',');
+    $where = key($where) . ' = '.implode(',',$where);
+    $sql .= " WHERE $where";
+
+    $result =  $this->conn->prepare( $sql )->execute();
+
+    return $result;
+}
 
 }
