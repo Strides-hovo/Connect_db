@@ -9,8 +9,8 @@ class Db {
 
 private const HOST = 'localhost';
 private const USER = 'root';
-private const PASS = '';
-private const DB_NAME = 'test';
+private const PASS = 'root';
+private const DB_NAME = 'hrach';
 private const OPTIONS = [
   PDO::ATTR_ERRMODE             => PDO::ERRMODE_EXCEPTION,
   PDO::ATTR_DEFAULT_FETCH_MODE  => PDO::FETCH_ASSOC,
@@ -18,16 +18,19 @@ private const OPTIONS = [
 ];
 
 public $conn;
-public $where;
-public $select;
-public $quantity;
-public $insert;
-
+public $where = null;
+public $select = null;
+public $quantity  = null;
+public $insert = null;
+public $left_join = null;
+public $query = null;
+// public $lastId;
 
  public function __construct()
 {
   try{
       $this->conn = new PDO('mysql:host='.self::HOST.';dbname='.self::DB_NAME,self::USER,self::PASS,self::OPTIONS );
+      // $this->lastId = $this->conn->lastInsertId();
   }
   catch(PDOExeption $e){
       throw  $e->getMessage();
@@ -53,13 +56,13 @@ public function select( $table )
       $str .= 'SELECT ' . implode( ',' ,$v) . ' FROM ' . $k;
     }
   }
-  $this->select = $str;
+   $this->select = $str;
   return $this;
 }
 
 /**
  * where( ['id' => 4, 'name' => 'mark'] )
- * where('id = 2')
+ * where("privilegiya != 'admin'")
  * @return string
  */
 
@@ -76,11 +79,16 @@ public function where(  $where )
       $i++;
       }
   }else{
-    $str .= ' WHERE ' . $where;
+    $str .= " WHERE $where";
   }
+
   $this->where = $str;
   return $this;
 }
+
+
+
+
 
 /**
  * get PDO::fetch
@@ -91,6 +99,9 @@ public function where(  $where )
   $this->quantity = 'fetch';
   return $this->req();
 }
+
+
+
 
 
 
@@ -114,12 +125,24 @@ public function all()
 
  public function req()
 {
-   $sql = $this->select . $this->where;
-   $res = $this->conn->prepare( $sql );
+   $sql  = ($this->select) ?? null;
+   $sql .= ($this->where)  ?? null;
+   $sql .= ($this->left_join) ?? null;
+   // $sql .= ($this->query)  ?? null;
+
+   $res  = $this->conn->prepare( $sql );
    $res->execute();
    $req = $this->quantity;
-   return $res->$req();
+ 
+   $result = $res->$req();
+
+   return $result;
 }
+
+
+
+
+
 
 /**
  * $table string
@@ -144,10 +167,10 @@ public function all()
 
     foreach ( $data as $key => $value ) {
       $ins .= "?,";
-      if(is_array($value)) 
+      if( is_array($value) ) 
             $items[] = $value;
       else 
-            $items[] = array_fill( 0, count( $data[0] ), $value );  
+            $items[] = array_fill( 0, 1, $value );  
       }
 
       $ins = rtrim($ins,',');
@@ -171,14 +194,20 @@ public function all()
   return $res;
 }
 
-  
-  /**
+
+
+
+
+
+
+/**
  * $table string
  * $colums string|array
  * $data array
  * $where array
  * @example update('category',['name',status'],[$name,$status]);
  * @example update('category','name,status', $name, 1 );
+ * @example update('category','status', $status, ['id' => $_POST['task_id']]);
  * @return count update_row
  */
 public function update( $table, $colums, $data, $where )
@@ -189,7 +218,7 @@ public function update( $table, $colums, $data, $where )
     $type = 'array';
 
       if ( is_string( $colums )) 
-          $sql .= "{$colums} = {$data}";
+          $sql .= " {$colums} = '{$data}'";
 
       else if( is_array( $colums )){
         $count = count( $colums );
@@ -206,5 +235,66 @@ public function update( $table, $colums, $data, $where )
 
     return $result;
 }
+
+
+
+
+
+
+
+public function left_join( $table1, $column1,$table2, $column2 )
+{
+  $res = "SELECT * FROM `production` 
+          LEFT JOIN foremens 
+          ON production.foremen_id = foremens.id";
+   $sql = " LEFT JOIN {$table2} ON {$table1}.{$column1} = {$table2}.{$column2}";
+$this->left_join = $sql;
+return $this;
+}
+
+
+
+
+
+
+
+
+
+
+
+public function query( $query, $type = 'fetchAll' ){
+    $this->query = $query;
+    $res  = $this->conn->prepare( $query );
+    $res->execute();
+  
+    $req = $type;
+
+    $result = $res->$req();
+
+   return $result;
+}
+
+
+
+/**
+ * $from string
+ * $where string
+ * @example delite('category',"name = 'polo'" );
+ * @return count update_row
+ */
+
+public function delite( $from, $where )
+{
+  $sql = "DELETE FROM $from WHERE ";
+  if (is_string($where) ) {
+      $sql .= $where;
+  }
+
+    $this->conn->query( $sql );
+}
+
+
+
+
 
 }
