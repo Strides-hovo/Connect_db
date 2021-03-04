@@ -1,10 +1,12 @@
 <?php
 
-// error_reporting(E_ALL);
+function debug( $data, $type = false ){
+	if( $type ) var_dump( '<pre>', $data, '</pre>' );
+  else echo '<pre>' . print_r( $data, true ) . '</pre>';
+}
 
 
-require 'functions.php';
-require 'yxml.php';
+
 require 'classes/Db.php';
 
 $name   = ['make','join','simone','bob','pop'];
