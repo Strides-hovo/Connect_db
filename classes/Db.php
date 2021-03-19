@@ -7,14 +7,16 @@ use \PDO;
 
 class Db {
 
-private const HOST = 'localhost';
-private const USER = 'root';
-private const PASS = 'root';
-private const DB_NAME = 'hrach';
+private static $HOST = 'localhost';
+private static $USER = 'root';
+private static $PASS = 'root';
+private static $DB_NAME = 's_red_rect';
 private const OPTIONS = [
+  PDO::MYSQL_ATTR_FOUND_ROWS   => TRUE,
   PDO::ATTR_ERRMODE             => PDO::ERRMODE_EXCEPTION,
   PDO::ATTR_DEFAULT_FETCH_MODE  => PDO::FETCH_ASSOC,
   PDO::ATTR_EMULATE_PREPARES    => FALSE
+  
 ];
 
 public $conn;
@@ -24,18 +26,30 @@ public $quantity  = null;
 public $insert = null;
 public $left_join = null;
 public $query = null;
+public $orderBy = null;
+public $rowCount = null;
 // public $lastId;
 
- public function __construct()
-{
+ public function __construct( $host,$user,$pass,$dbName ){
+
+    self::$HOST    = $host;
+    self::$USER    = $user;
+    self::$PASS    = $pass;
+    self::$DB_NAME = $dbName;
+
   try{
-      $this->conn = new PDO('mysql:host='.self::HOST.';dbname='.self::DB_NAME,self::USER,self::PASS,self::OPTIONS );
+      $this->conn = new PDO('mysql:host='.self::$HOST.';dbname='.self::$DB_NAME,self::$USER,self::$PASS,self::OPTIONS );
       // $this->lastId = $this->conn->lastInsertId();
+
   }
   catch(PDOExeption $e){
       throw  $e->getMessage();
   }
 }
+
+
+
+
 
 
 
@@ -87,6 +101,14 @@ public function where(  $where )
 }
 
 
+/*
+* orderBy(id,ASC)
+*/
+public function orderBy( $orderBy )
+{
+    $this->orderBy =  ' ORDER BY ' . key($orderBy) . ' '. current($orderBy);
+    return $this;
+}
 
 
 
@@ -128,12 +150,13 @@ public function all()
    $sql  = ($this->select) ?? null;
    $sql .= ($this->where)  ?? null;
    $sql .= ($this->left_join) ?? null;
+   $sql .= ($this->orderBy) ?? null;
    // $sql .= ($this->query)  ?? null;
 
    $res  = $this->conn->prepare( $sql );
    $res->execute();
    $req = $this->quantity;
- 
+
    $result = $res->$req();
 
    return $result;
@@ -141,6 +164,53 @@ public function all()
 
 
 
+
+/*
+* return query->rowCount()
+*/
+public function replace( $table, $colums, $data ){
+
+    $ins = '';
+    $items = [];
+    $request = []; 
+
+    if( is_string($colums) ){
+      $colum = $colums;
+    }elseif (is_array($colums)){
+      $colum = implode(', ',$colums);
+    }else return false;
+
+    foreach ( $data as $key => $value ) {
+      $ins .= "?,";
+      if( is_array($value) ) 
+            $items[] = $value;
+      else 
+            $items[] = array_fill( 0, 1, $value );  
+      }
+
+      $ins = rtrim($ins,',');
+      $ins = "( {$ins} )";
+      $sql = "REPLACE INTO `{$table}` ($colum) VALUES $ins";
+         
+    if( !empty( $items ) ){
+      $query = $this->conn->prepare( $sql );
+      for($i = 0; $i < count( $items[0] ); ++$i){
+          for( $s = 0; $s < count( $items ); ++$s ){
+              $request[$i][$s] = $items[$s][$i];
+          }
+      }
+
+      $res = 0;
+      foreach ( $request as $key => $execute ) {
+        
+        if( $query->execute( $execute ) ){
+
+          $res += $query->rowCount();
+        }else return false;
+      }
+    }
+  return $res;
+}
 
 
 
@@ -283,11 +353,16 @@ public function query( $query, $type = 'fetchAll' ){
  * @return count update_row
  */
 
-public function delite( $from, $where )
+public function delete( $from, $where )
 {
   $sql = "DELETE FROM $from WHERE ";
   if (is_string($where) ) {
       $sql .= $where;
+  }else{
+    foreach ($where as $k => $w) {
+        $sql .= $k . ' = ' . $w;
+    }
+    
   }
 
     $this->conn->query( $sql );
